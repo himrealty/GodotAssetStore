@@ -1,5 +1,7 @@
 const CONFIG = {
-    DATA: 'data/datadollar.json',
+    // 1. FIXED: Pointing to the correct filename you uploaded
+    DATA: 'data/dollar.json', 
+    // 2. Your Google Apps Script Web App URL
     URL: 'https://script.google.com/macros/s/AKfycbwcdjHW4yAoz5eCPKzgBVIw6_IzJhgvqDlwdXhL7EHezpFZEAsByzNKi69i3LUt2N65/exec' 
 };
 
@@ -7,63 +9,44 @@ let products = [];
 let activeItem = null;
 
 async function init() {
-    const res = await fetch(CONFIG.DATA);
-    products = await res.json();
-    document.getElementById('productGrid').innerHTML = products.map(p => `
+    try {
+        console.log("Fetching from:", CONFIG.DATA);
+        const res = await fetch(CONFIG.DATA);
+        
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        
+        products = await res.json();
+        renderProducts(products);
+    } catch (error) {
+        console.error('Fetch Error:', error);
+        document.getElementById('productGrid').innerHTML = `
+            <div style="color: white; text-align: center; padding: 50px;">
+                <h3>Error: Failed to load assets</h3>
+                <p>${error.message}</p>
+                <p>Ensure dollar.json is in the /data folder.</p>
+            </div>`;
+    }
+}
+
+function renderProducts(items) {
+    const grid = document.getElementById('productGrid');
+    grid.innerHTML = items.map(p => `
         <div class="product-card">
-            <img src="${p.image}" class="product-image">
+            <div class="product-image">
+                <img src="${p.image}" alt="${p.name}" onerror="this.src='https://placehold.co/600x400?text=Asset'">
+            </div>
             <div class="product-info">
+                <span class="category-badge">${p.category}</span>
                 <h3>${p.name}</h3>
                 <p>${p.description}</p>
                 <div class="product-footer">
-                    <span>$${p.price.toFixed(2)}</span>
-                    <button class="buy-button" onclick="openModal('${p.id}')">Buy</button>
+                    <span class="product-price">$${p.price.toFixed(2)}</span>
+                    <button class="buy-button" onclick="openModal('${p.id}')">Buy Now</button>
                 </div>
             </div>
         </div>
     `).join('');
 }
 
-function openModal(id) {
-    activeItem = products.find(p => p.id === id);
-    document.getElementById('modalProductName').innerText = activeItem.name;
-    document.getElementById('modalProductPrice').innerText = `$${activeItem.price}`;
-    document.getElementById('emailModal').classList.add('active');
-    renderPaypal();
-}
-
-function closeEmailModal() {
-    document.getElementById('emailModal').classList.remove('active');
-    document.getElementById('paypal-button-container').innerHTML = '';
-}
-
-function renderPaypal() {
-    paypal.Buttons({
-        createOrder: (data, actions) => {
-            const email = document.getElementById('customerEmail').value;
-            if (!email.includes('@')) return alert('Valid email required');
-            return actions.order.create({
-                purchase_units: [{ amount: { value: activeItem.price.toString() }, description: activeItem.name }]
-            });
-        },
-        onApprove: async (data, actions) => {
-            await actions.order.capture();
-            verify(data.orderID);
-        }
-    }).render('#paypal-button-container');
-}
-
-async function verify(orderId) {
-    const email = document.getElementById('customerEmail').value;
-    const res = await fetch(CONFIG.URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'verifyPayPal', orderId, productId: activeItem.id, email, amount: activeItem.price })
-    });
-    const result = await res.json();
-    if (result.success) {
-        alert('Payment Success! Check email.');
-        closeEmailModal();
-    }
-}
-
+// ... (keep openModal, closeEmailModal, and verify functions same as before)
 init();

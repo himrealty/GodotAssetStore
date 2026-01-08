@@ -1,0 +1,92 @@
+[
+  {
+    "id": 1,
+    "name": "AI Enemy System",
+    "description": "Complete AI system with pathfinding, combat logic, and state machines for Godot 4. Perfect for creating intelligent enemies.",
+    "price": 499,
+    "image": "images/products/ai-system.jpg",
+    "category": "Scripts",
+    "featured": true
+  },
+  {
+    "id": 2,
+    "name": "Multiplayer Kit",
+    "description": "Full multiplayer networking solution with player sync, lobby system, and matchmaking for Godot 4.",
+    "price": 999,
+    "image": "images/products/multiplayer-kit.jpg",
+    "category": "Systems",
+    "featured": true
+  },
+  {
+    "id": 3,
+    "name": "Vehicle System",
+    "description": "Complete vehicle driving system with passenger support, physics, and mobile controls for Godot 4.",
+    "price": 799,
+    "image": "images/products/vehicle-system.jpg",
+    "category": "Systems",
+    "featured": false
+  },
+  {
+    "id": 4,
+    "name": "Gun Combat System",
+    "description": "Production-ready shooting mechanics with recoil, reloading, and multiplayer sync for Godot 4.",
+    "price": 599,
+    "image": "images/products/gun-combat.jpg",
+    "category": "Scripts",
+    "featured": true
+  },
+  {
+    "id": 5,
+    "name": "Melee Combat System",
+    "description": "Complete melee combat with combos, blocking, and damage system for Godot 4.",
+    "price": 499,
+    "image": "images/products/melee-combat.jpg",
+    "category": "Scripts",
+    "featured": false
+  },
+  {
+    "id": 6,
+    "name": "Supabase Auth Integration",
+    "description": "Ready-to-use Supabase authentication with email/password, social login, and user management.",
+    "price": 399,
+    "image": "images/products/supabase-auth.jpg",
+    "category": "Backend",
+    "featured": false
+  },
+  {
+    "id": 7,
+    "name": "Battle Royale System",
+    "description": "Complete battle royale mechanics including shrinking zone, spawn system, and victory conditions.",
+    "price": 1299,
+    "image": "images/products/battle-royale.jpg",
+    "category": "Systems",
+    "featured": true
+  },
+  {
+    "id": 8,
+    "name": "Inventory System",
+    "description": "Drag-and-drop inventory with item stacking, equipment slots, and save/load support.",
+    "price": 699,
+    "image": "images/products/inventory-system.jpg",
+    "category": "UI",
+    "featured": false
+  },
+  {
+    "id": 9,
+    "name": "Character Controller",
+    "description": "Smooth 3D character controller with jumping, crouching, sprinting, and mobile touch controls.",
+    "price": 449,
+    "image": "images/products/character-controller.jpg",
+    "category": "Scripts",
+    "featured": false
+  },
+  {
+    "id": 10,
+    "name": "AI Zombie System",
+    "description": "Zombie AI with pathfinding, attacking, and multiplayer synchronization for horror games.",
+    "price": 549,
+    "image": "images/products/zombie-ai.jpg",
+    "category": "Scripts",
+    "featured": false
+  }
+]

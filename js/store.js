@@ -1,7 +1,7 @@
 // Store Configuration
 const CONFIG = {
     PRODUCTS_JSON_PATH: 'data/products.json',
-    GOOGLE_APPS_SCRIPT_URL: 'YOUR_APPS_SCRIPT_URL_HERE' // We'll add this later
+    GOOGLE_APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzsi05KsAOMzu1SNfhK3d2uLt4C14Ytc6rPYfaXABT_HYfUuguRPaMmAlMJM3YKZrv4qw/exec' // Add your deployed Apps Script URL here
 };
 
 // Global variables
@@ -154,7 +154,7 @@ function closeEmailModal() {
 
 // Proceed to payment
 async function proceedToPayment() {
-    const email = document.getElementById('customerEmail').value.trim();
+    const email = document.getElementById('customerEmail').value.trim().toLowerCase();
     const continueButton = document.querySelector('.modal-button-primary');
     
     // Validate email
@@ -173,34 +173,349 @@ async function proceedToPayment() {
         return;
     }
     
+    // Check if Apps Script URL is configured
+    if (CONFIG.GOOGLE_APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
+        alert('⚠️ Apps Script not configured yet!\n\nPlease follow the setup guide to:\n1. Deploy Google Apps Script\n2. Add the URL to store.js\n\nSee SETUP-GUIDE.md for instructions.');
+        return;
+    }
+    
     // Show loading state
     continueButton.disabled = true;
     continueButton.textContent = 'Checking...';
     
     try {
-        // For now, simulate checking with a delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Step 1: Check if user already purchased this product
+        const checkResponse = await fetch(CONFIG.GOOGLE_APPS_SCRIPT_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: 'checkPurchase',
+                email: email,
+                productId: selectedProduct.id
+            })
+        });
         
-        // Close modal
+        const checkData = await checkResponse.json();
+        
+        if (!checkData.success) {
+            throw new Error(checkData.message || 'Failed to check purchase status');
+        }
+        
+        // Check if already purchased
+        if (checkData.purchased) {
+            closeEmailModal();
+            continueButton.disabled = false;
+            continueButton.textContent = 'Continue to Payment';
+            showAlreadyPurchasedModal(selectedProduct, email, checkData);
+            return;
+        }
+        
+        // Step 2: Not purchased, create Razorpay order
+        continueButton.textContent = 'Creating order...';
+        
+        const orderResponse = await fetch(CONFIG.GOOGLE_APPS_SCRIPT_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: 'createOrder',
+                productId: selectedProduct.id,
+                amount: selectedProduct.price,
+                email: email
+            })
+        });
+        
+        const orderData = await orderResponse.json();
+        
+        if (!orderData.success) {
+            throw new Error(orderData.message || 'Failed to create order');
+        }
+        
+        // Step 3: Open Razorpay checkout
         closeEmailModal();
-        
-        // Show success message with product details
-        showPaymentInfoModal(selectedProduct, email);
-        
-        // Reset button
         continueButton.disabled = false;
         continueButton.textContent = 'Continue to Payment';
         
-        // TODO: Call Google Apps Script to:
-        // 1. Check if user already purchased
-        // 2. Create Razorpay order
-        // 3. Open Razorpay checkout
+        openRazorpayCheckout(orderData, selectedProduct, email);
         
     } catch (error) {
         console.error('Error:', error);
-        showModalError('Something went wrong. Please try again.');
+        showModalError('Error: ' + error.message);
         continueButton.disabled = false;
         continueButton.textContent = 'Continue to Payment';
+    }
+}
+
+// Open Razorpay Checkout
+function openRazorpayCheckout(orderData, product, email) {
+    const options = {
+        key: orderData.keyId,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: 'Godot Game Assets',
+        description: product.name,
+        image: 'images/logo.png', // Your logo
+        order_id: orderData.orderId,
+        prefill: {
+            email: email,
+            name: '',
+            contact: ''
+        },
+        theme: {
+            color: '#ff6b35'
+        },
+        handler: function(response) {
+            // Payment successful
+            verifyAndDeliverProduct(response, product.id, email);
+        },
+        modal: {
+            ondismiss: function() {
+                console.log('Checkout closed');
+            }
+        }
+    };
+    
+    const razorpay = new Razorpay(options);
+    razorpay.open();
+}
+
+// Verify payment and deliver product
+async function verifyAndDeliverProduct(paymentResponse, productId, email) {
+    try {
+        // Show processing modal
+        showProcessingModal();
+        
+        const verifyResponse = await fetch(CONFIG.GOOGLE_APPS_SCRIPT_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: 'verifyPayment',
+                orderId: paymentResponse.razorpay_order_id,
+                paymentId: paymentResponse.razorpay_payment_id,
+                signature: paymentResponse.razorpay_signature,
+                productId: productId,
+                email: email
+            })
+        });
+        
+        const verifyData = await verifyResponse.json();
+        
+        closeProcessingModal();
+        
+        if (verifyData.success) {
+            showSuccessModal(email);
+        } else {
+            showErrorModal(verifyData.message);
+        }
+        
+    } catch (error) {
+        console.error('Verification error:', error);
+        closeProcessingModal();
+        showErrorModal('Payment verification failed. Please contact support with your payment ID.');
+    }
+}
+
+// Show already purchased modal
+function showAlreadyPurchasedModal(product, email, checkData) {
+    const modal = `
+        <div class="modal-overlay active" id="alreadyPurchasedModal">
+            <div class="email-modal">
+                <button class="modal-close" onclick="closeAlreadyPurchasedModal()">✕</button>
+                <div style="text-align: center; margin-bottom: 1.5rem;">
+                    <div style="font-size: 4rem;">✅</div>
+                </div>
+                <h2 class="modal-title">You Already Own This!</h2>
+                
+                <div class="modal-product-info">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Product:</strong> ${product.name}
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Purchased:</strong> ${new Date(checkData.lastPurchaseDate).toLocaleDateString()}
+                    </div>
+                    <div>
+                        <strong>Email:</strong> ${email}
+                    </div>
+                </div>
+                
+                <div style="background: rgba(0, 217, 255, 0.1); padding: 1rem; border-radius: 8px; border: 1px solid var(--accent); margin: 1.5rem 0;">
+                    <p style="margin: 0; font-size: 0.9rem; color: var(--accent);">
+                        📧 Check your email for the download link
+                    </p>
+                </div>
+                
+                <button class="modal-button modal-button-primary" onclick="resendDownloadLink('${email}', ${product.id})" style="width: 100%; margin-bottom: 0.5rem;">
+                    📧 Resend Download Link
+                </button>
+                
+                <button class="modal-button modal-button-secondary" onclick="closeAlreadyPurchasedModal()" style="width: 100%;">
+                    Close
+                </button>
+                
+                <p class="modal-note">
+                    Can't find the email? Check your spam folder or contact support.
+                </p>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modal);
+    document.body.style.overflow = 'hidden';
+}
+
+function closeAlreadyPurchasedModal() {
+    const modal = document.getElementById('alreadyPurchasedModal');
+    if (modal) {
+        modal.remove();
+        document.body.style.overflow = 'auto';
+    }
+}
+
+// Resend download link
+async function resendDownloadLink(email, productId) {
+    const button = event.target;
+    button.disabled = true;
+    button.textContent = 'Sending...';
+    
+    try {
+        const response = await fetch(CONFIG.GOOGLE_APPS_SCRIPT_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: 'resendEmail',
+                email: email,
+                productId: productId
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            button.textContent = '✓ Email Sent!';
+            button.style.background = 'var(--success)';
+            setTimeout(() => {
+                closeAlreadyPurchasedModal();
+            }, 2000);
+        } else {
+            button.textContent = 'Failed - Try Again';
+            button.disabled = false;
+            alert('Failed to resend email: ' + data.message);
+        }
+        
+    } catch (error) {
+        console.error('Resend error:', error);
+        button.textContent = 'Error - Try Again';
+        button.disabled = false;
+        alert('Error resending email. Please contact support.');
+    }
+}
+
+// Show processing modal
+function showProcessingModal() {
+    const modal = `
+        <div class="modal-overlay active" id="processingModal">
+            <div class="email-modal" style="text-align: center;">
+                <div class="loading-spinner" style="margin: 2rem auto;"></div>
+                <h2 class="modal-title">Processing Payment...</h2>
+                <p>Please wait while we verify your payment and prepare your download.</p>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modal);
+    document.body.style.overflow = 'hidden';
+}
+
+function closeProcessingModal() {
+    const modal = document.getElementById('processingModal');
+    if (modal) modal.remove();
+}
+
+// Show success modal
+function showSuccessModal(email) {
+    const modal = `
+        <div class="modal-overlay active" id="successModal">
+            <div class="email-modal">
+                <div style="text-align: center; margin-bottom: 1.5rem;">
+                    <div style="font-size: 4rem;">🎉</div>
+                </div>
+                <h2 class="modal-title">Payment Successful!</h2>
+                
+                <div style="background: rgba(40, 167, 69, 0.1); padding: 1.5rem; border-radius: 8px; border: 1px solid var(--success); margin: 1.5rem 0;">
+                    <p style="margin: 0; font-size: 1.1rem; color: var(--success);">
+                        ✓ Your purchase is complete!
+                    </p>
+                    <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; color: #ccc;">
+                        We've sent the download link to:<br>
+                        <strong>${email}</strong>
+                    </p>
+                </div>
+                
+                <button class="modal-button modal-button-primary" onclick="closeSuccessModal()" style="width: 100%;">
+                    Awesome!
+                </button>
+                
+                <p class="modal-note">
+                    Check your email (and spam folder) for the download link.
+                </p>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modal);
+    document.body.style.overflow = 'hidden';
+}
+
+function closeSuccessModal() {
+    const modal = document.getElementById('successModal');
+    if (modal) {
+        modal.remove();
+        document.body.style.overflow = 'auto';
+    }
+}
+
+// Show error modal
+function showErrorModal(message) {
+    const modal = `
+        <div class="modal-overlay active" id="errorModal">
+            <div class="email-modal">
+                <div style="text-align: center; margin-bottom: 1.5rem;">
+                    <div style="font-size: 4rem;">⚠️</div>
+                </div>
+                <h2 class="modal-title">Payment Error</h2>
+                
+                <div style="background: rgba(220, 53, 69, 0.1); padding: 1.5rem; border-radius: 8px; border: 1px solid var(--error); margin: 1.5rem 0;">
+                    <p style="margin: 0; color: var(--error);">
+                        ${message || 'Something went wrong with your payment.'}
+                    </p>
+                </div>
+                
+                <button class="modal-button modal-button-primary" onclick="closeErrorModal()" style="width: 100%;">
+                    Close
+                </button>
+                
+                <p class="modal-note">
+                    If you were charged, please contact support with your payment details.
+                </p>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modal);
+    document.body.style.overflow = 'hidden';
+}
+
+function closeErrorModal() {
+    const modal = document.getElementById('errorModal');
+    if (modal) {
+        modal.remove();
+        document.body.style.overflow = 'auto';
     }
 }
 
@@ -227,61 +542,6 @@ function showModalError(message) {
         emailInput.style.borderColor = '';
         if (errorDiv) errorDiv.remove();
     }, { once: true });
-}
-
-// Show payment info modal (temporary until we integrate payment)
-function showPaymentInfoModal(product, email) {
-    const infoHTML = `
-        <div class="modal-overlay active" id="paymentInfoModal">
-            <div class="email-modal">
-                <button class="modal-close" onclick="closePaymentInfoModal()">✕</button>
-                <h2 class="modal-title">Ready to Proceed</h2>
-                
-                <div class="modal-product-info">
-                    <div style="margin-bottom: 1rem;">
-                        <strong>Product:</strong> ${product.name}
-                    </div>
-                    <div style="margin-bottom: 1rem;">
-                        <strong>Price:</strong> <span style="color: var(--primary); font-size: 1.5rem;">₹${product.price}</span>
-                    </div>
-                    <div>
-                        <strong>Email:</strong> ${email}
-                    </div>
-                </div>
-                
-                <div style="background: rgba(0, 217, 255, 0.1); padding: 1rem; border-radius: 8px; border: 1px solid var(--accent); margin: 1.5rem 0;">
-                    <p style="margin: 0; font-size: 0.9rem; color: var(--accent);">
-                        ℹ️ <strong>Next Step:</strong> Google Apps Script Integration
-                    </p>
-                    <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #ccc;">
-                        Once integrated, this will:
-                        <br>• Check if you already purchased this
-                        <br>• Create a Razorpay order
-                        <br>• Open the payment gateway
-                    </p>
-                </div>
-                
-                <button class="modal-button modal-button-primary" onclick="closePaymentInfoModal()" style="width: 100%;">
-                    Got it!
-                </button>
-                
-                <p class="modal-note">
-                    Save Product ID: <strong>${product.id}</strong> and Email: <strong>${email}</strong> for testing
-                </p>
-            </div>
-        </div>
-    `;
-    
-    document.body.insertAdjacentHTML('beforeend', infoHTML);
-    document.body.style.overflow = 'hidden';
-}
-
-function closePaymentInfoModal() {
-    const modal = document.getElementById('paymentInfoModal');
-    if (modal) {
-        modal.remove();
-        document.body.style.overflow = 'auto';
-    }
 }
 
 // Email validation

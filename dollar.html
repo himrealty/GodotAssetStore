@@ -3,24 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Godot Store - PayPal</title>
+    <title>Godot Store - Global ($)</title>
+    <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/stylesdollar.css">
     <script src="https://www.paypal.com/sdk/js?client-id=AbdHJhfKfzEhixqzr_7d2kP9GLnm2AKtZP0FJQtFvM7XNDyLnNqbV1kgV6tFLuFKTCDIEsi2bbTA9LlE&currency=USD"></script>
 </head>
-<body>
-    <header class="header"><div class="logo">GODOT<span>STORE</span></div></header>
-    
+<body style="background: linear-gradient(135deg, #1a1a1a 0%, #2d1b69 100%);">
+
+    <header>
+        <div class="container">
+            <nav>
+                <div class="logo">GODOT ASSETS <span>USD</span></div>
+                <div class="nav-links">
+                    <a href="index.html">INR Store</a>
+                    <a href="dollar.html" style="color: #ff6b35;">Global ($)</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <div style="padding-top: 120px; text-align: center;">
+        <h1 style="color: #ff6b35; font-size: 2.5rem;">International Store</h1>
+        <p style="color: #ccc;">Secure PayPal checkout for global creators</p>
+    </div>
+
     <main class="container">
-        <div class="product-grid" id="productGrid"></div>
+        <div class="product-grid" id="productGrid">
+            </div>
     </main>
 
     <div class="modal-overlay" id="emailModal">
-        <div class="email-modal">
-            <button class="modal-close" onclick="closeEmailModal()">✕</button>
-            <h2 id="modalProductName">Product Name</h2>
-            <p id="modalProductPrice">$0.00</p>
-            <input type="email" id="customerEmail" class="email-input" placeholder="Enter your email" required>
-            <div id="paypal-button-container" style="margin-top:20px;"></div>
+        <div class="email-modal" style="background: #2a2a2a; border: 1px solid #ff6b35;">
+            <button class="modal-close" onclick="closeEmailModal()" style="color: white;">✕</button>
+            <h2 id="modalProductName" style="color: white;">Product Name</h2>
+            <p id="modalProductPrice" style="color: #ff6b35; font-weight: bold; font-size: 1.5rem;">$0.00</p>
+            
+            <input type="email" id="customerEmail" class="email-input" 
+                   placeholder="Enter delivery email" 
+                   style="background: #1a1a1a; color: white; border: 1px solid #444;">
+            
+            <div id="paypal-button-container"></div>
         </div>
     </div>
 

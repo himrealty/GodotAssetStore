@@ -1,6 +1,7 @@
 // Store Configuration
 const CONFIG = {
     PRODUCTS_JSON_PATH: 'data/products.json',
+    // Updated with your latest deployment URL
     GOOGLE_APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwHRcV2noGnfHiHSxpGvIjjlDWU8sDHV-ZlCPIZ5R8NYYRwZxiBQM67tqQxjkgRH-hQbg/exec'
 };
 
@@ -23,11 +24,7 @@ async function loadProducts() {
     try {
         showLoading();
         const response = await fetch(CONFIG.PRODUCTS_JSON_PATH);
-        
-        if (!response.ok) {
-            throw new Error('Failed to load products');
-        }
-        
+        if (!response.ok) throw new Error('Failed to load products');
         allProducts = await response.json();
         displayProducts(allProducts);
         hideLoading();
@@ -74,31 +71,19 @@ function displayProducts(products) {
     `).join('');
 }
 
-// Filter products
+// Filter and Search Logic
 function filterProducts() {
     let filtered = allProducts;
-    
     if (currentFilter !== 'all') {
-        if (currentFilter === 'featured') {
-            filtered = filtered.filter(p => p.featured);
-        } else {
-            filtered = filtered.filter(p => p.category === currentFilter);
-        }
+        filtered = (currentFilter === 'featured') ? filtered.filter(p => p.featured) : filtered.filter(p => p.category === currentFilter);
     }
-    
     if (currentSearch) {
         const search = currentSearch.toLowerCase();
-        filtered = filtered.filter(p => 
-            p.name.toLowerCase().includes(search) ||
-            p.description.toLowerCase().includes(search) ||
-            p.category.toLowerCase().includes(search)
-        );
+        filtered = filtered.filter(p => p.name.toLowerCase().includes(search) || p.description.toLowerCase().includes(search));
     }
-    
     displayProducts(filtered);
 }
 
-// Setup functions
 function setupFilterButtons() {
     const filterButtons = document.querySelectorAll('.filter-btn');
     filterButtons.forEach(button => {
@@ -125,12 +110,10 @@ function setupSearch() {
 function openEmailModal(productId) {
     selectedProduct = allProducts.find(p => p.id === productId);
     if (!selectedProduct) return;
-    
     document.getElementById('modalProductName').textContent = selectedProduct.name;
     document.getElementById('modalProductPrice').textContent = `₹${selectedProduct.price}`;
     document.getElementById('customerEmail').value = '';
     document.getElementById('emailModal').classList.add('active');
-    document.body.style.overflow = 'hidden';
 }
 
 function closeEmailModal() {
@@ -139,21 +122,22 @@ function closeEmailModal() {
     selectedProduct = null;
 }
 
-// --- UPDATED PAYMENT LOGIC TO FIX "FAILED TO FETCH" ---
+// --- CORE PAYMENT LOGIC ---
 async function proceedToPayment() {
-    const email = document.getElementById('customerEmail').value.trim().toLowerCase();
+    const emailInput = document.getElementById('customerEmail');
+    const email = emailInput.value.trim().toLowerCase();
     const continueButton = document.querySelector('.modal-button-primary');
     
-    if (!email || !isValidEmail(email)) {
-        showModalError('Please enter a valid email address');
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        alert('Please enter a valid email address');
         return;
     }
 
     continueButton.disabled = true;
-    continueButton.textContent = 'Checking...';
+    continueButton.textContent = 'Contacting Server...';
     
     try {
-        // Step 1: Check Purchase Status
+        // 1. Check if already purchased
         const checkResponse = await fetch(CONFIG.GOOGLE_APPS_SCRIPT_URL, {
             method: 'POST',
             mode: 'cors',
@@ -166,15 +150,14 @@ async function proceedToPayment() {
         });
         
         const checkData = await checkResponse.json();
-        
         if (checkData.purchased) {
+            alert('You already own this product! We have re-sent the download link to your email.');
             closeEmailModal();
-            showAlreadyPurchasedModal(selectedProduct, email, checkData);
             return;
         }
         
-        // Step 2: Create Razorpay Order
-        continueButton.textContent = 'Creating order...';
+        // 2. Create Order
+        continueButton.textContent = 'Opening Razorpay...';
         const orderResponse = await fetch(CONFIG.GOOGLE_APPS_SCRIPT_URL, {
             method: 'POST',
             mode: 'cors',
@@ -188,42 +171,55 @@ async function proceedToPayment() {
         });
         
         const orderData = await orderResponse.json();
-        console.log("Order Data Received:", orderData);
 
-        if (!orderData.success) throw new Error(orderData.message);
+        if (!orderData.success) {
+            throw new Error(orderData.message || 'Order creation failed on server');
+        }
         
-        closeEmailModal();
-        openRazorpayCheckout(orderData, selectedProduct, email);
+        // Pass data to Razorpay Checkout
+        startRazorpay(orderData, email);
         
     } catch (error) {
-        console.error('Fetch Error:', error);
-        showModalError('Connection Error: Please ensure Apps Script is deployed as "Anyone"');
-    } finally {
+        console.error('Process Error:', error);
+        alert('Connection Error: ' + error.message);
         continueButton.disabled = false;
         continueButton.textContent = 'Continue to Payment';
     }
 }
 
-function openRazorpayCheckout(orderData, product, email) {
+function startRazorpay(orderData, email) {
     const options = {
-        key: orderData.keyId,
-        amount: orderData.amount,
-        currency: orderData.currency,
-        name: 'Godot Game Assets',
-        description: product.name,
-        order_id: orderData.orderId,
-        prefill: { email: email },
-        theme: { color: '#ff6b35' },
-        handler: function(response) {
-            verifyAndDeliverProduct(response, product.id, email);
+        "key": orderData.key, // Your Apps Script returns "key"
+        "amount": orderData.amount,
+        "currency": "INR",
+        "name": "Godot Game Assets",
+        "description": selectedProduct.name,
+        "order_id": orderData.orderId,
+        "prefill": { "email": email },
+        "theme": { "color": "#ff6b35" },
+        "handler": function (response) {
+            // This runs after successful payment
+            closeEmailModal();
+            verifyPayment(response, email);
+        },
+        "modal": {
+            "ondismiss": function() {
+                // Reset button if user closes the Razorpay window
+                const btn = document.querySelector('.modal-button-primary');
+                if(btn) {
+                    btn.disabled = false;
+                    btn.textContent = 'Continue to Payment';
+                }
+            }
         }
     };
-    const razorpay = new Razorpay(options);
-    razorpay.open();
+
+    const rzp = new Razorpay(options);
+    rzp.open();
 }
 
-async function verifyAndDeliverProduct(paymentResponse, productId, email) {
-    showProcessingModal();
+async function verifyPayment(paymentResponse, email) {
+    // Show a basic processing alert or overlay here if desired
     try {
         const verifyResponse = await fetch(CONFIG.GOOGLE_APPS_SCRIPT_URL, {
             method: 'POST',
@@ -234,52 +230,31 @@ async function verifyAndDeliverProduct(paymentResponse, productId, email) {
                 orderId: paymentResponse.razorpay_order_id,
                 paymentId: paymentResponse.razorpay_payment_id,
                 signature: paymentResponse.razorpay_signature,
-                productId: productId,
+                productId: selectedProduct.id,
                 email: email
             })
         });
         
-        const verifyData = await verifyResponse.json();
-        closeProcessingModal();
-        
-        if (verifyData.success) {
-            showSuccessModal(email);
+        const result = await verifyResponse.json();
+        if (result.success) {
+            alert('Payment Successful! The download link has been sent to ' + email);
         } else {
-            showErrorModal(verifyData.message);
+            alert('Verification Error: ' + result.message);
         }
     } catch (error) {
-        closeProcessingModal();
-        showErrorModal('Verification failed. Please contact support.');
+        alert('Verification failed. Please contact support with your Payment ID.');
     }
 }
 
-// Utility Functions (Keep your existing versions of these)
-function isValidEmail(email) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
-
-function showModalError(message) {
-    const emailInput = document.getElementById('customerEmail');
-    let errorDiv = document.querySelector('.modal-error');
-    if (!errorDiv) {
-        errorDiv = document.createElement('div');
-        errorDiv.className = 'modal-error';
-        emailInput.parentElement.insertBefore(errorDiv, emailInput.nextSibling);
-    }
-    errorDiv.textContent = message;
-    errorDiv.style.color = '#ff4b2b';
-    errorDiv.style.fontSize = '0.85rem';
-}
-
+// UI Helpers
 function showLoading() { document.getElementById('loadingState').style.display = 'block'; }
 function hideLoading() { document.getElementById('loadingState').style.display = 'none'; }
 function showError() { document.getElementById('loadingState').innerHTML = '<h3>Error Loading Products</h3>'; }
 
-// Mobile Menu
 function initializeMobileMenu() {
     const btn = document.getElementById('mobileMenuBtn');
-    const close = document.getElementById('mobileCloseBtn');
     const menu = document.getElementById('mobileMenu');
+    const close = document.getElementById('mobileCloseBtn');
     if(btn) btn.onclick = () => menu.classList.add('active');
     if(close) close.onclick = () => menu.classList.remove('active');
 }

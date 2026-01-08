@@ -1,0 +1,29 @@
+[
+  {
+    "id": "GDT-001",
+    "name": "Ultimate Player Controller",
+    "description": "Smooth 3D/2D movement with built-in coyote time and wall jump.",
+    "price": 9.99,
+    "image": "https://placehold.co/600x400/2c3e50/ffffff?text=Player+Controller",
+    "category": "Scripts",
+    "featured": true
+  },
+  {
+    "id": "GDT-002",
+    "name": "Inventory & Crafting System",
+    "description": "Drag-and-drop inventory system with recipe support.",
+    "price": 19.50,
+    "image": "https://placehold.co/600x400/2c3e50/ffffff?text=Inventory+System",
+    "category": "Systems",
+    "featured": true
+  },
+  {
+    "id": "GDT-003",
+    "name": "Retro Shader Pack",
+    "description": "CRT, Pixelate, and PS1-style dithering shaders.",
+    "price": 5.00,
+    "image": "https://placehold.co/600x400/2c3e50/ffffff?text=Shader+Pack",
+    "category": "Shaders",
+    "featured": false
+  }
+]

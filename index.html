@@ -3,279 +3,387 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Godot Assets Store - Ready-Made Game Development Resources</title>
-    <meta name="description" content="Production-tested Godot scripts, addons, courses and assets. Save weeks of development time with plug-and-play solutions.">
+    <title>Store - Godot Game Assets</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="images/logo.png">
+    <link rel="stylesheet" href="css/styles.css">
     <style>
-        :root {
-            --primary: #ff6b35;
-            --secondary: #2a2a2a;
-            --accent: #00d9ff;
-            --light: #f8f9fa;
-            --dark: #1a1a1a;
-            --success: #28a745;
+        /* Store-specific styles */
+        .store-hero {
+            padding: 150px 0 80px;
+            text-align: center;
+            background: radial-gradient(circle at center, #2d1b69 0%, var(--dark) 70%);
         }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        
+        .store-hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: var(--primary);
         }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: var(--light);
-            background: linear-gradient(135deg, var(--dark) 0%, #2d1b69 100%);
+        
+        .filter-section {
+            padding: 2rem 0;
+            background: var(--secondary);
+            position: sticky;
+            top: 76px;
+            z-index: 100;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
-
-        /* Header */
-        header {
-            background: rgba(26, 26, 26, 0.95);
-            backdrop-filter: blur(10px);
-            position: fixed;
-            width: 100%;
-            z-index: 1000;
-            border-bottom: 2px solid var(--primary);
-        }
-
-        nav {
+        
+        .filter-container {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 1rem 0;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
-
-        .logo {
-            font-size: 1.8rem;
-            font-weight: bold;
-            color: var(--primary);
+        
+        .filter-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
         }
-
-        .cta-button {
-            background: var(--primary);
-            color: white;
-            padding: 0.8rem 2rem;
-            border-radius: 5px;
-            text-decoration: none;
-            font-weight: bold;
-            transition: all 0.3s;
-            border: none;
+        
+        .filter-btn {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--light);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
             cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9rem;
         }
-
-        .cta-button:hover {
-            background: #e55a2b;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(255, 107, 53, 0.4);
+        
+        .filter-btn:hover {
+            border-color: var(--primary);
+            background: rgba(255, 107, 53, 0.1);
         }
-
-        /* Hero */
-        .hero {
-            padding: 150px 0 80px;
-            text-align: center;
+        
+        .filter-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
         }
-
-        .hero h1 {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            background: linear-gradient(45deg, var(--primary), var(--accent));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+        
+        .search-box {
+            position: relative;
+            flex: 1;
+            max-width: 400px;
         }
-
-        .hero p {
-            font-size: 1.3rem;
-            margin-bottom: 2rem;
-            color: #ccc;
-            max-width: 800px;
-            margin-left: auto;
-            margin-right: auto;
+        
+        .search-box input {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 25px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--light);
+            font-size: 0.9rem;
         }
-
-        /* Section */
-        section {
-            padding: 60px 0;
+        
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--primary);
         }
-
-        .section-title {
-            text-align: center;
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
-            color: var(--accent);
+        
+        .products-section {
+            padding: 80px 0;
+            min-height: 60vh;
         }
-
-        .section-subtitle {
-            text-align: center;
-            color: #ccc;
-            margin-bottom: 3rem;
-            font-size: 1.1rem;
-        }
-
-        /* Product Grid */
-        .product-grid {
+        
+        .products-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 2rem;
-            margin-top: 3rem;
+            margin-top: 2rem;
         }
-
+        
         .product-card {
             background: rgba(255, 255, 255, 0.05);
             border-radius: 15px;
-            padding: 2rem;
+            overflow: hidden;
             border: 1px solid rgba(255, 255, 255, 0.1);
             transition: all 0.3s;
-            position: relative;
+            display: flex;
+            flex-direction: column;
         }
-
+        
         .product-card:hover {
-            transform: translateY(-10px);
+            transform: translateY(-5px);
             border-color: var(--primary);
-            box-shadow: 0 15px 30px rgba(255, 107, 53, 0.2);
+            box-shadow: 0 10px 30px rgba(255, 107, 53, 0.2);
         }
-
-        .product-badge {
+        
+        .product-image {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(135deg, #2d1b69 0%, var(--dark) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: var(--primary);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .product-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .featured-badge {
             position: absolute;
-            top: 15px;
-            right: 15px;
-            background: var(--primary);
+            top: 10px;
+            right: 10px;
+            background: var(--accent);
             color: white;
             padding: 0.3rem 0.8rem;
             border-radius: 15px;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             font-weight: bold;
         }
-
-        .product-card h3 {
+        
+        .product-content {
+            padding: 1.5rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .product-category {
             color: var(--accent);
-            margin-bottom: 1rem;
-            font-size: 1.3rem;
-        }
-
-        .product-card p {
-            color: #ccc;
-            margin-bottom: 1rem;
-            min-height: 60px;
-        }
-
-        .product-features {
-            list-style: none;
-            margin: 1rem 0;
-            padding: 0;
-        }
-
-        .product-features li {
-            padding: 0.3rem 0;
-            padding-left: 1.5rem;
-            position: relative;
-            font-size: 0.9rem;
-            color: #ddd;
-        }
-
-        .product-features li:before {
-            content: "✓";
-            color: var(--success);
+            font-size: 0.85rem;
             font-weight: bold;
-            position: absolute;
-            left: 0;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
         }
-
+        
+        .product-title {
+            font-size: 1.3rem;
+            color: var(--light);
+            margin-bottom: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .product-description {
+            color: #ccc;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+            flex: 1;
+        }
+        
+        .product-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
         .product-price {
-            font-size: 2rem;
+            font-size: 1.8rem;
             color: var(--primary);
             font-weight: bold;
-            margin: 1rem 0;
         }
-
-        .product-actions {
-            display: flex;
-            gap: 0.5rem;
-            margin-top: 1.5rem;
+        
+        .product-price-currency {
+            font-size: 1rem;
+            color: #ccc;
         }
-
-        .buy-btn {
-            flex: 1;
+        
+        .buy-button {
             background: var(--primary);
             color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
             border: none;
-            padding: 0.8rem;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        .buy-button:hover {
+            background: #e55a2b;
+            transform: scale(1.05);
+        }
+        
+        .no-products {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #ccc;
+        }
+        
+        .no-products-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--primary);
+        }
+        
+        .loading-spinner {
+            border: 4px solid rgba(255, 107, 53, 0.1);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Email Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            z-index: 2000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+        }
+        
+        .email-modal {
+            background: var(--secondary);
+            border: 2px solid var(--primary);
+            border-radius: 15px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            position: relative;
+        }
+        
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            color: var(--light);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        .modal-title {
+            color: var(--primary);
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .modal-product-info {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+        
+        .modal-product-name {
+            font-size: 1.1rem;
+            color: var(--light);
+            margin-bottom: 0.5rem;
+        }
+        
+        .modal-product-price {
+            font-size: 1.5rem;
+            color: var(--primary);
+            font-weight: bold;
+        }
+        
+        .email-input {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--light);
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .email-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .modal-button {
+            flex: 1;
+            padding: 1rem;
+            border: none;
             border-radius: 8px;
             font-weight: bold;
             cursor: pointer;
             transition: all 0.3s;
         }
-
-        .buy-btn:hover {
+        
+        .modal-button-primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .modal-button-primary:hover {
             background: #e55a2b;
         }
-
-        /* CTA Section */
-        .cta-section {
-            background: linear-gradient(135deg, var(--primary) 0%, #e55a2b 100%);
-            padding: 80px 0;
-            text-align: center;
-            color: white;
+        
+        .modal-button-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--light);
         }
-
-        .cta-section h2 {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
+        
+        .modal-button-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
         }
-
-        .whatsapp-button {
-            background: #25D366;
-            color: white;
-            padding: 1rem 2.5rem;
-            border-radius: 50px;
-            text-decoration: none;
-            font-weight: bold;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.8rem;
-            font-size: 1.1rem;
-            transition: all 0.3s;
+        
+        .modal-note {
+            font-size: 0.85rem;
+            color: #ccc;
             margin-top: 1rem;
-        }
-
-        .whatsapp-button:hover {
-            background: #20bd5a;
-            transform: translateY(-3px);
-        }
-
-        /* Footer */
-        footer {
-            background: var(--dark);
-            padding: 3rem 0;
             text-align: center;
-            border-top: 2px solid var(--primary);
         }
-
+        
         /* Responsive */
         @media (max-width: 768px) {
-            .hero h1 {
-                font-size: 2rem;
+            .store-hero h1 {
+                font-size: 2.2rem;
             }
-
-            .hero p {
-                font-size: 1.1rem;
+            
+            .filter-container {
+                flex-direction: column;
             }
-
-            .product-grid {
+            
+            .search-box {
+                max-width: 100%;
+            }
+            
+            .products-grid {
                 grid-template-columns: 1fr;
             }
-
-            .section-title {
-                font-size: 2rem;
-            }
-
-            .cta-section h2 {
-                font-size: 1.8rem;
+            
+            .filter-section {
+                top: 60px;
             }
         }
     </style>
@@ -285,223 +393,144 @@
     <header>
         <div class="container">
             <nav>
-                <div class="logo">GODOT STORE</div>
-                <a href="https://wa.me/917504704502" class="cta-button">💬 WhatsApp</a>
+                <div class="logo">GODOT ASSETS</div>
+                
+                <div class="nav-links">
+                    <a href='/'>Home</a>
+                    <a href='/blog'>Blog</a>
+                    <a href='/scripts'>Scripts</a>
+                    <a href='/minicourses'>Mini Courses</a>
+                    <a href='/services'>Services</a>
+                    <a href='/pvp-game'>PVP Game Course</a>
+                    <a class='active' href='store.html'>Store</a>
+                    <a href='/#contact'>Contact</a>
+                </div>
+                
+                <a href="#products" class="cta-button">Browse Products</a>
+                
+                <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
             </nav>
         </div>
+        
+        <!-- Mobile Menu -->
+        <div class="mobile-menu" id="mobileMenu">
+            <div class="mobile-menu-header">
+                <div class="mobile-menu-logo">GODOT ASSETS</div>
+                <button class="mobile-close-btn" id="mobileCloseBtn">✕</button>
+            </div>
+            
+            <div class="mobile-nav-links">
+                <a href='/' onclick='closeMobileMenu()'>Home</a>
+                <a href='/blog' onclick='closeMobileMenu()'>Blog</a>
+                <a href='/scripts' onclick='closeMobileMenu()'>Scripts</a>
+                <a href='/minicourses' onclick='closeMobileMenu()'>Mini Courses</a>
+                <a href='/services' onclick='closeMobileMenu()'>Services</a>
+                <a href='/pvp-game' onclick='closeMobileMenu()'>PVP Game Course</a>
+                <a class='active' href='store.html' onclick='closeMobileMenu()'>Store</a>
+                <a href='/#contact' onclick='closeMobileMenu()'>Contact</a>
+            </div>
+        </div>
+        
+        <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
     </header>
 
-    <!-- Hero -->
-    <section class="hero">
+    <!-- Hero Section -->
+    <section class="store-hero">
         <div class="container">
-            <h1>Ready-Made Godot Assets</h1>
-            <p>Production-tested scripts, addons, courses & asset packs. Stop coding from scratch - build games faster!</p>
-            <a href="#products" class="cta-button">Browse Products ↓</a>
+            <h1>🎮 Godot Assets Store</h1>
+            <p>Production-tested scripts and systems for Godot 4</p>
         </div>
     </section>
 
-    <!-- Addons Section -->
-    <section id="products">
+    <!-- Filter Section -->
+    <section class="filter-section" id="filters">
         <div class="container">
-            <h2 class="section-title">🔌 Godot Addons</h2>
-            <p class="section-subtitle">Complete systems ready to import into your project</p>
-            
-            <div class="product-grid">
-                <div class="product-card">
-                    <div class="product-badge">BEST SELLER</div>
-                    <h3>Mobile Touch Controls</h3>
-                    <p>Complete touch control system with joystick, buttons, and multi-touch support</p>
-                    <ul class="product-features">
-                        <li>Virtual joystick</li>
-                        <li>Customizable buttons</li>
-                        <li>Multi-touch support</li>
-                        <li>Easy integration</li>
-                    </ul>
-                    <div class="product-price">₹149</div>
-                    <div class="product-actions">
-                        <button class="buy-btn" onclick="buyProduct('Mobile Touch Controls Addon', 149)">Buy Now</button>
-                    </div>
+            <div class="filter-container">
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-category="all">All Products</button>
+                    <button class="filter-btn" data-category="Scripts">Scripts</button>
+                    <button class="filter-btn" data-category="Systems">Systems</button>
+                    <button class="filter-btn" data-category="UI">UI</button>
+                    <button class="filter-btn" data-category="Backend">Backend</button>
+                    <button class="filter-btn" data-category="featured">Featured</button>
                 </div>
-
-                <div class="product-card">
-                    <h3>Inventory System</h3>
-                    <p>Drag-and-drop inventory with save/load, item stacking, and mobile support</p>
-                    <ul class="product-features">
-                        <li>Drag & drop items</li>
-                        <li>Item stacking</li>
-                        <li>Save/load system</li>
-                        <li>Mobile optimized</li>
-                    </ul>
-                    <div class="product-price">₹149</div>
-                    <div class="product-actions">
-                        <button class="buy-btn" onclick="buyProduct('Inventory System Addon', 149)">Buy Now</button>
-                    </div>
+                
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="🔍 Search products...">
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Courses Section -->
-    <section style="background: rgba(255, 255, 255, 0.02);">
+    <!-- Products Section -->
+    <section class="products-section" id="products">
         <div class="container">
-            <h2 class="section-title">📚 Mini Courses</h2>
-            <p class="section-subtitle">Video tutorials + complete source code included</p>
+            <!-- Loading State -->
+            <div class="loading" id="loadingState">
+                <div class="loading-spinner"></div>
+                <p>Loading awesome products...</p>
+            </div>
             
-            <div class="product-grid">
-                <div class="product-card">
-                    <div class="product-badge">POPULAR</div>
-                    <h3>Multiplayer Game Basics</h3>
-                    <p>Learn multiplayer networking from scratch with step-by-step tutorials</p>
-                    <ul class="product-features">
-                        <li>4 hours of video</li>
-                        <li>Complete source code</li>
-                        <li>Client-server setup</li>
-                        <li>Player synchronization</li>
-                    </ul>
-                    <div class="product-price">₹149</div>
-                    <div class="product-actions">
-                        <button class="buy-btn" onclick="buyProduct('Multiplayer Game Basics Course', 149)">Enroll Now</button>
-                    </div>
-                </div>
-
-                <div class="product-card">
-                    <h3>Mobile Game Optimization</h3>
-                    <p>Master mobile game performance with proven optimization techniques</p>
-                    <ul class="product-features">
-                        <li>3 hours of video</li>
-                        <li>Performance tips</li>
-                        <li>Battery optimization</li>
-                        <li>Asset optimization</li>
-                    </ul>
-                    <div class="product-price">₹99</div>
-                    <div class="product-actions">
-                        <button class="buy-btn" onclick="buyProduct('Mobile Game Optimization Course', 99)">Enroll Now</button>
-                    </div>
-                </div>
+            <!-- Products Grid -->
+            <div class="products-grid" id="productsGrid" style="display: none;">
+                <!-- Products will be injected here by JavaScript -->
+            </div>
+            
+            <!-- No Products State -->
+            <div class="no-products" id="noProductsState" style="display: none;">
+                <div class="no-products-icon">🔍</div>
+                <h3>No products found</h3>
+                <p>Try adjusting your filters or search terms</p>
             </div>
         </div>
     </section>
 
-    <!-- Scripts Section -->
-    <section>
-        <div class="container">
-            <h2 class="section-title">📝 Script Packs</h2>
-            <p class="section-subtitle">Ready-to-use GDScript code for common game features</p>
+    <!-- Email Modal -->
+    <div class="modal-overlay" id="emailModal">
+        <div class="email-modal">
+            <button class="modal-close" onclick="closeEmailModal()">✕</button>
+            <h2 class="modal-title">Enter Your Email</h2>
             
-            <div class="product-grid">
-                <div class="product-card">
-                    <h3>Player Controller Pack</h3>
-                    <p>Complete player movement with animations, jump, crouch, and weapon handling</p>
-                    <ul class="product-features">
-                        <li>Movement & animations</li>
-                        <li>Jump & crouch</li>
-                        <li>Weapon system</li>
-                        <li>Well documented</li>
-                    </ul>
-                    <div class="product-price">₹199</div>
-                    <div class="product-actions">
-                        <button class="buy-btn" onclick="buyProduct('Player Controller Script Pack', 199)">Buy Now</button>
-                    </div>
-                </div>
-
-                <div class="product-card">
-                    <h3>AI Enemy Pack</h3>
-                    <p>Smart AI enemies with pathfinding, combat logic, and state machines</p>
-                    <ul class="product-features">
-                        <li>Pathfinding AI</li>
-                        <li>Combat behaviors</li>
-                        <li>State machines</li>
-                        <li>Easy to customize</li>
-                    </ul>
-                    <div class="product-price">₹149</div>
-                    <div class="product-actions">
-                        <button class="buy-btn" onclick="buyProduct('AI Enemy Script Pack', 149)">Buy Now</button>
-                    </div>
-                </div>
+            <div class="modal-product-info">
+                <div class="modal-product-name" id="modalProductName"></div>
+                <div class="modal-product-price" id="modalProductPrice"></div>
             </div>
-        </div>
-    </section>
-
-    <!-- Asset Packs Section -->
-    <section style="background: rgba(255, 255, 255, 0.02);">
-        <div class="container">
-            <h2 class="section-title">🎨 Asset Packs</h2>
-            <p class="section-subtitle">Game-ready 3D models, textures, and animations</p>
             
-            <div class="product-grid">
-                <div class="product-card">
-                    <div class="product-badge">NEW</div>
-                    <h3>UI Button Pack</h3>
-                    <p>10 professional UI button designs in multiple styles with hover states</p>
-                    <ul class="product-features">
-                        <li>10 button designs</li>
-                        <li>Multiple styles</li>
-                        <li>Hover animations</li>
-                        <li>Source files included</li>
-                    </ul>
-                    <div class="product-price">₹49</div>
-                    <div class="product-actions">
-                        <button class="buy-btn" onclick="buyProduct('UI Button Pack', 49)">Buy Now</button>
-                    </div>
-                </div>
-
-                <div class="product-card">
-                    <h3>3D Character Models</h3>
-                    <p>5 rigged and animated character models ready for your game</p>
-                    <ul class="product-features">
-                        <li>5 character models</li>
-                        <li>Fully rigged</li>
-                        <li>20+ animations</li>
-                        <li>Low-poly mobile ready</li>
-                    </ul>
-                    <div class="product-price">₹299</div>
-                    <div class="product-actions">
-                        <button class="buy-btn" onclick="buyProduct('3D Character Models Pack', 299)">Buy Now</button>
-                    </div>
-                </div>
+            <input 
+                type="email" 
+                class="email-input" 
+                id="customerEmail" 
+                placeholder="your@email.com"
+                required
+            >
+            
+            <div class="modal-buttons">
+                <button class="modal-button modal-button-secondary" onclick="closeEmailModal()">
+                    Cancel
+                </button>
+                <button class="modal-button modal-button-primary" onclick="proceedToPayment()">
+                    Continue to Payment
+                </button>
             </div>
+            
+            <p class="modal-note">
+                We'll check if you already own this product and send the download link to this email.
+            </p>
         </div>
-    </section>
-
-    <!-- CTA Section -->
-    <section class="cta-section">
-        <div class="container">
-            <h2>Ready to Build Your Game?</h2>
-            <p style="font-size: 1.2rem; margin: 1.5rem 0;">Save weeks of development time. Get production-ready assets today!</p>
-            <a href="https://wa.me/917504704502?text=Hi!%20I%27m%20interested%20in%20your%20Godot%20assets" 
-               class="whatsapp-button" 
-               target="_blank">
-                <span>📱</span> Contact on WhatsApp
-            </a>
-        </div>
-    </section>
+    </div>
 
     <!-- Footer -->
     <footer>
         <div class="container">
-            <div class="logo" style="margin-bottom: 1rem;">GODOT STORE</div>
-            <p style="color: #999;">Ready-Made Godot Assets for Faster Game Development</p>
-            <p style="color: #666; margin-top: 2rem;">© 2024 Godot Store. All rights reserved.</p>
+            <div class="logo" style="margin-bottom: 1rem;">GODOT ASSETS</div>
+            <p>Ready-made Godot Scripts & Systems for Faster Game Development</p>
+            <div style="margin-top: 2rem; font-size: 0.9rem; color: #ccc;">
+                © 2024 Godot Game Assets Marketplace. All rights reserved.
+            </div>
         </div>
     </footer>
 
-    <script>
-        function buyProduct(productName, price) {
-            const message = `Hello! I'd like to purchase "${productName}" for ₹${price}.`;
-            const whatsappUrl = `https://wa.me/917504704502?text=${encodeURIComponent(message)}`;
-            window.open(whatsappUrl, '_blank');
-        }
-
-        // Smooth scroll
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-            });
-        });
-    </script>
+    <!-- Load store.js (we'll create this next) -->
+    <script src="js/store.js"></script>
 </body>
 </html>

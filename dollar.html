@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Godot Store - PayPal</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://www.paypal.com/sdk/js?client-id=AbdHJhfKfzEhixqzr_7d2kP9GLnm2AKtZP0FJQtFvM7XNDyLnNqbV1kgV6tFLuFKTCDIEsi2bbTA9LlE&currency=USD"></script>
+</head>
+<body>
+    <header class="header"><div class="logo">GODOT<span>STORE</span></div></header>
+    
+    <main class="container">
+        <div class="product-grid" id="productGrid"></div>
+    </main>
+
+    <div class="modal-overlay" id="emailModal">
+        <div class="email-modal">
+            <button class="modal-close" onclick="closeEmailModal()">✕</button>
+            <h2 id="modalProductName">Product Name</h2>
+            <p id="modalProductPrice">$0.00</p>
+            <input type="email" id="customerEmail" class="email-input" placeholder="Enter your email" required>
+            <div id="paypal-button-container" style="margin-top:20px;"></div>
+        </div>
+    </div>
+
+    <script src="js/storedollar.js"></script>
+</body>
+</html>

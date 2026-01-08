@@ -155,40 +155,133 @@ function closeEmailModal() {
 // Proceed to payment
 async function proceedToPayment() {
     const email = document.getElementById('customerEmail').value.trim();
+    const continueButton = document.querySelector('.modal-button-primary');
     
     // Validate email
     if (!email) {
-        alert('Please enter your email address');
+        showModalError('Please enter your email address');
         return;
     }
     
     if (!isValidEmail(email)) {
-        alert('Please enter a valid email address');
+        showModalError('Please enter a valid email address');
         return;
     }
     
     if (!selectedProduct) {
-        alert('Product not selected');
+        showModalError('Product not selected');
         return;
     }
     
-    // Close modal and show processing
-    closeEmailModal();
+    // Show loading state
+    continueButton.disabled = true;
+    continueButton.textContent = 'Checking...';
     
-    // Here we'll integrate with Google Apps Script
-    // For now, just show alert
-    alert(`Next Step: Integrate with Google Apps Script
-    
-Product: ${selectedProduct.name}
-Price: ₹${selectedProduct.price}
-Email: ${email}
+    try {
+        // For now, simulate checking with a delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Close modal
+        closeEmailModal();
+        
+        // Show success message with product details
+        showPaymentInfoModal(selectedProduct, email);
+        
+        // Reset button
+        continueButton.disabled = false;
+        continueButton.textContent = 'Continue to Payment';
+        
+        // TODO: Call Google Apps Script to:
+        // 1. Check if user already purchased
+        // 2. Create Razorpay order
+        // 3. Open Razorpay checkout
+        
+    } catch (error) {
+        console.error('Error:', error);
+        showModalError('Something went wrong. Please try again.');
+        continueButton.disabled = false;
+        continueButton.textContent = 'Continue to Payment';
+    }
+}
 
-We'll implement this in the next step!`);
+// Show error in modal
+function showModalError(message) {
+    const emailInput = document.getElementById('customerEmail');
+    emailInput.style.borderColor = 'var(--error)';
     
-    // TODO: Call Google Apps Script to:
-    // 1. Check if user already purchased
-    // 2. Create Razorpay order
-    // 3. Open Razorpay checkout
+    // Create or update error message
+    let errorDiv = document.querySelector('.modal-error');
+    if (!errorDiv) {
+        errorDiv = document.createElement('div');
+        errorDiv.className = 'modal-error';
+        emailInput.parentElement.insertBefore(errorDiv, emailInput.nextSibling);
+    }
+    
+    errorDiv.textContent = message;
+    errorDiv.style.color = 'var(--error)';
+    errorDiv.style.fontSize = '0.85rem';
+    errorDiv.style.marginTop = '0.5rem';
+    
+    // Reset border color after typing
+    emailInput.addEventListener('input', function() {
+        emailInput.style.borderColor = '';
+        if (errorDiv) errorDiv.remove();
+    }, { once: true });
+}
+
+// Show payment info modal (temporary until we integrate payment)
+function showPaymentInfoModal(product, email) {
+    const infoHTML = `
+        <div class="modal-overlay active" id="paymentInfoModal">
+            <div class="email-modal">
+                <button class="modal-close" onclick="closePaymentInfoModal()">✕</button>
+                <h2 class="modal-title">Ready to Proceed</h2>
+                
+                <div class="modal-product-info">
+                    <div style="margin-bottom: 1rem;">
+                        <strong>Product:</strong> ${product.name}
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <strong>Price:</strong> <span style="color: var(--primary); font-size: 1.5rem;">₹${product.price}</span>
+                    </div>
+                    <div>
+                        <strong>Email:</strong> ${email}
+                    </div>
+                </div>
+                
+                <div style="background: rgba(0, 217, 255, 0.1); padding: 1rem; border-radius: 8px; border: 1px solid var(--accent); margin: 1.5rem 0;">
+                    <p style="margin: 0; font-size: 0.9rem; color: var(--accent);">
+                        ℹ️ <strong>Next Step:</strong> Google Apps Script Integration
+                    </p>
+                    <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #ccc;">
+                        Once integrated, this will:
+                        <br>• Check if you already purchased this
+                        <br>• Create a Razorpay order
+                        <br>• Open the payment gateway
+                    </p>
+                </div>
+                
+                <button class="modal-button modal-button-primary" onclick="closePaymentInfoModal()" style="width: 100%;">
+                    Got it!
+                </button>
+                
+                <p class="modal-note">
+                    Save Product ID: <strong>${product.id}</strong> and Email: <strong>${email}</strong> for testing
+                </p>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', infoHTML);
+    document.body.style.overflow = 'hidden';
+}
+
+function closePaymentInfoModal() {
+    const modal = document.getElementById('paymentInfoModal');
+    if (modal) {
+        modal.remove();
+        document.body.style.overflow = 'auto';
+    }
 }
 
 // Email validation

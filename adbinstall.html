@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ADB Install Guide — CGLive</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #090a0f;
+      --surface: #0f1117;
+      --surface2:#13161f;
+      --border:  #1e2130;
+      --green:   #00ff88;
+      --green-dim:rgba(0,255,136,0.08);
+      --blue:    #4d9fff;
+      --blue-dim:rgba(77,159,255,0.08);
+      --yellow:  #ffb400;
+      --yellow-dim:rgba(255,180,0,0.08);
+      --text:    #e8eaf0;
+      --muted:   #4a4f6a;
+      --mono:    'JetBrains Mono', monospace;
+      --display: 'Syne', sans-serif;
+    }
+
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: var(--display);
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; padding: 40px 20px 60px;
+    }
+
+    body::before {
+      content: ''; position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none; z-index: 0;
+    }
+
+    .wrapper {
+      position: relative; z-index: 1;
+      width: 100%; max-width: 640px;
+      display: flex; flex-direction: column; gap: 24px;
+    }
+
+    /* ── Header ── */
+    header { text-align: center; }
+    .tag {
+      font-family: var(--mono); font-size: 10px;
+      letter-spacing: 0.22em; color: var(--muted);
+      text-transform: uppercase; margin-bottom: 10px;
+    }
+    h1 { font-size: 2rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; }
+    h1 span { color: var(--green); }
+    .subtitle { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-top: 8px; }
+
+    /* ── Prereq banner ── */
+    .prereq {
+      background: var(--yellow-dim);
+      border: 1px solid rgba(255,180,0,0.2);
+      border-radius: 12px; padding: 16px 18px;
+      display: flex; gap: 12px; align-items: flex-start;
+    }
+    .prereq-icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+    .prereq-body { flex: 1; }
+    .prereq-title { font-size: 0.85rem; font-weight: 700; color: var(--yellow); margin-bottom: 6px; }
+    .prereq-text { font-family: var(--mono); font-size: 11px; color: var(--muted); line-height: 1.7; }
+    .prereq-text a { color: var(--blue); text-decoration: none; }
+    .prereq-text a:hover { text-decoration: underline; }
+
+    /* ── Method cards ── */
+    .method {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px; overflow: hidden;
+    }
+
+    .method-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px;
+      cursor: pointer; user-select: none;
+      transition: background 0.2s;
+    }
+    .method-header:hover { background: rgba(255,255,255,0.02); }
+
+    .method-num {
+      width: 28px; height: 28px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--mono); font-size: 12px; font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .method.usb    .method-num { background: rgba(0,255,136,0.12); color: var(--green); }
+    .method.wifi   .method-num { background: rgba(77,159,255,0.12); color: var(--blue); }
+    .method.remote .method-num { background: rgba(255,180,0,0.12);  color: var(--yellow); }
+
+    .method-title-wrap { flex: 1; }
+    .method-title { font-size: 0.9rem; font-weight: 700; }
+    .method-sub { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+    .method-badge {
+      font-family: var(--mono); font-size: 9px; font-weight: 700;
+      padding: 3px 8px; border-radius: 4px; letter-spacing: 0.08em;
+    }
+    .badge-easy   { background: rgba(0,255,136,0.1); color: var(--green); }
+    .badge-medium { background: rgba(77,159,255,0.1); color: var(--blue); }
+    .badge-remote { background: rgba(255,180,0,0.1);  color: var(--yellow); }
+
+    .chevron {
+      font-size: 12px; color: var(--muted);
+      transition: transform 0.25s; flex-shrink: 0;
+    }
+    .method.open .chevron { transform: rotate(180deg); }
+
+    .method-body {
+      display: none; padding: 18px 20px;
+      flex-direction: column; gap: 14px;
+    }
+    .method.open .method-body { display: flex; }
+
+    /* Steps */
+    .steps { display: flex; flex-direction: column; gap: 10px; }
+    .step  { display: flex; align-items: flex-start; gap: 10px; }
+
+    .step-num {
+      flex-shrink: 0; width: 22px; height: 22px;
+      border-radius: 50%; border: 1px solid var(--border);
+      background: var(--surface2);
+      font-family: var(--mono); font-size: 10px; font-weight: 700;
+      color: var(--muted);
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .method.usb    .step-num { border-color: rgba(0,255,136,0.2); color: var(--green); }
+    .method.wifi   .step-num { border-color: rgba(77,159,255,0.2); color: var(--blue); }
+    .method.remote .step-num { border-color: rgba(255,180,0,0.2);  color: var(--yellow); }
+
+    .step-text {
+      font-family: var(--mono); font-size: 11px;
+      color: var(--muted); line-height: 1.65; padding-top: 2px;
+    }
+    .step-text strong { color: var(--text); font-weight: 600; }
+
+    /* Code block */
+    .code-block {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px; overflow: hidden;
+    }
+
+    .code-top {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 14px; border-bottom: 1px solid var(--border);
+    }
+
+    .code-label { font-family: var(--mono); font-size: 10px; color: var(--muted); }
+
+    .copy-btn {
+      background: transparent; border: 1px solid var(--border);
+      color: var(--muted); border-radius: 5px;
+      padding: 3px 10px; font-family: var(--mono);
+      font-size: 10px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .copy-btn:hover { border-color: var(--green); color: var(--green); }
+    .copy-btn.copied { border-color: var(--green); color: var(--green); }
+
+    pre {
+      padding: 14px 16px; overflow-x: auto;
+      font-family: var(--mono); font-size: 12px;
+      line-height: 1.7; color: var(--text);
+    }
+
+    pre .comment { color: var(--muted); }
+    pre .cmd     { color: var(--green); }
+    pre .flag    { color: var(--blue); }
+    pre .path    { color: var(--yellow); }
+
+    /* Divider */
+    .divider {
+      border: none; border-top: 1px solid var(--border);
+      margin: 4px 0;
+    }
+
+    /* Info tip */
+    .tip {
+      background: var(--blue-dim);
+      border: 1px solid rgba(77,159,255,0.2);
+      border-radius: 8px; padding: 10px 14px;
+      font-family: var(--mono); font-size: 11px;
+      color: var(--muted); line-height: 1.65;
+      display: flex; gap: 8px; align-items: flex-start;
+    }
+    .tip-icon { color: var(--blue); flex-shrink: 0; }
+    .tip strong { color: var(--blue); }
+
+    /* APK path card */
+    .apk-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px; overflow: hidden;
+    }
+    .apk-header {
+      padding: 14px 20px; border-bottom: 1px solid var(--border);
+    }
+    .apk-title { font-size: 0.9rem; font-weight: 700; }
+    .apk-sub   { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 2px; }
+    .apk-body  { padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; }
+    .apk-step  { font-family: var(--mono); font-size: 11px; color: var(--muted); line-height: 1.65; }
+    .apk-step strong { color: var(--text); }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+
+  <header>
+    <p class="tag">CGLive &mdash; Developer Guide</p>
+    <h1>Install via <span>ADB</span></h1>
+    <p class="subtitle">Bypass Play Protect — install CGLive directly on any Android device</p>
+  </header>
+
+  <!-- Prereq -->
+  <div class="prereq">
+    <div class="prereq-icon">⚡</div>
+    <div class="prereq-body">
+      <div class="prereq-title">Prerequisite — Android Platform Tools</div>
+      <div class="prereq-text">
+        Download ADB from Google:
+        <a href="https://developer.android.com/tools/releases/platform-tools" target="_blank">
+          developer.android.com/tools/releases/platform-tools ↗
+        </a><br/>
+        Extract the zip and open a terminal inside the extracted folder before running any commands below.
+      </div>
+    </div>
+  </div>
+
+  <!-- APK location -->
+  <div class="apk-card">
+    <div class="apk-header">
+      <div class="apk-title">Build the APK in Android Studio</div>
+      <div class="apk-sub">Do this first before any install method below</div>
+    </div>
+    <div class="apk-body">
+      <div class="apk-step">1. Click <strong>Build → Build Bundle(s)/APK(s) → Build APK(s)</strong></div>
+      <div class="apk-step">2. Wait for the build to complete — click <strong>"locate"</strong> in the notification</div>
+      <div class="apk-step">3. Your APK will be at:</div>
+      <div class="code-block">
+        <div class="code-top">
+          <span class="code-label">APK path</span>
+          <button class="copy-btn" onclick="copyCode(this, 'app/build/outputs/apk/debug/app-debug.apk')">COPY</button>
+        </div>
+        <pre><span class="path">app/build/outputs/apk/debug/app-debug.apk</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Method 1: USB -->
+  <div class="method usb" id="method1">
+    <div class="method-header" onclick="toggleMethod('method1')">
+      <div class="method-num">1</div>
+      <div class="method-title-wrap">
+        <div class="method-title">USB Install</div>
+        <div class="method-sub">Direct cable connection — simplest method</div>
+      </div>
+      <span class="method-badge badge-easy">EASIEST</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="method-body">
+      <div class="steps">
+        <div class="step">
+          <span class="step-num">1</span>
+          <span class="step-text">On the test device go to <strong>Settings → About Phone</strong></span>
+        </div>
+        <div class="step">
+          <span class="step-num">2</span>
+          <span class="step-text">Tap <strong>Build Number</strong> 7 times until you see <strong>"You are now a developer"</strong></span>
+        </div>
+        <div class="step">
+          <span class="step-num">3</span>
+          <span class="step-text">Go to <strong>Settings → Developer Options</strong> and enable <strong>USB Debugging</strong></span>
+        </div>
+        <div class="step">
+          <span class="step-num">4</span>
+          <span class="step-text">Connect the device to your PC via USB cable. Tap <strong>"Allow"</strong> on the device when prompted</span>
+        </div>
+        <div class="step">
+          <span class="step-num">5</span>
+          <span class="step-text">Run these commands in your terminal:</span>
+        </div>
+      </div>
+      <div class="code-block">
+        <div class="code-top">
+          <span class="code-label">terminal</span>
+          <button class="copy-btn" onclick="copyCode(this, 'adb devices\nadb install -r app-debug.apk')">COPY</button>
+        </div>
+        <pre><span class="comment"># Verify device is detected</span>
+<span class="cmd">adb</span> devices
+
+<span class="comment"># Install the APK (-r reinstalls if already installed)</span>
+<span class="cmd">adb</span> install <span class="flag">-r</span> <span class="path">app-debug.apk</span></pre>
+      </div>
+      <div class="tip">
+        <span class="tip-icon">ℹ</span>
+        <span>If <strong>adb devices</strong> shows nothing, try a different USB cable or install the device USB driver from the manufacturer's website.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Method 2: WiFi -->
+  <div class="method wifi" id="method2">
+    <div class="method-header" onclick="toggleMethod('method2')">
+      <div class="method-num">2</div>
+      <div class="method-title-wrap">
+        <div class="method-title">WiFi Install</div>
+        <div class="method-sub">No cable needed after first setup</div>
+      </div>
+      <span class="method-badge badge-medium">WIRELESS</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="method-body">
+
+      <div class="tip">
+        <span class="tip-icon">ℹ</span>
+        <span><strong>Android 11+</strong> supports fully wireless pairing with no USB needed at all. Use the Wireless Debugging section below.</span>
+      </div>
+
+      <hr class="divider"/>
+      <div style="font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:0.12em;text-transform:uppercase;">Android 10 and below — USB first, then WiFi</div>
+
+      <div class="steps">
+        <div class="step">
+          <span class="step-num">1</span>
+          <span class="step-text">Enable USB Debugging (same as Method 1 steps 1–4)</span>
+        </div>
+        <div class="step">
+          <span class="step-num">2</span>
+          <span class="step-text">Connect via USB first, then run:</span>
+        </div>
+      </div>
+      <div class="code-block">
+        <div class="code-top">
+          <span class="code-label">terminal</span>
+          <button class="copy-btn" onclick="copyCode(this, 'adb tcpip 5555')">COPY</button>
+        </div>
+        <pre><span class="cmd">adb</span> tcpip <span class="flag">5555</span></pre>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <span class="step-num">3</span>
+          <span class="step-text">Find the device IP: <strong>Settings → About Phone → IP Address</strong></span>
+        </div>
+        <div class="step">
+          <span class="step-num">4</span>
+          <span class="step-text">Disconnect USB, then connect and install over WiFi:</span>
+        </div>
+      </div>
+      <div class="code-block">
+        <div class="code-top">
+          <span class="code-label">terminal</span>
+          <button class="copy-btn" onclick="copyCode(this, 'adb connect 192.168.1.x:5555\nadb install -r app-debug.apk')">COPY</button>
+        </div>
+        <pre><span class="cmd">adb</span> connect <span class="path">192.168.1.x</span><span class="flag">:5555</span>
+<span class="cmd">adb</span> install <span class="flag">-r</span> <span class="path">app-debug.apk</span></pre>
+      </div>
+
+      <hr class="divider"/>
+      <div style="font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:0.12em;text-transform:uppercase;">Android 11+ — Fully Wireless, No USB Ever</div>
+
+      <div class="steps">
+        <div class="step">
+          <span class="step-num">1</span>
+          <span class="step-text">Go to <strong>Settings → Developer Options → Wireless Debugging</strong> and enable it</span>
+        </div>
+        <div class="step">
+          <span class="step-num">2</span>
+          <span class="step-text">Tap <strong>"Pair device with pairing code"</strong> — note the IP, port and pairing code shown</span>
+        </div>
+        <div class="step">
+          <span class="step-num">3</span>
+          <span class="step-text">Run on your PC:</span>
+        </div>
+      </div>
+      <div class="code-block">
+        <div class="code-top">
+          <span class="code-label">terminal</span>
+          <button class="copy-btn" onclick="copyCode(this, 'adb pair 192.168.1.x:PORT\nadb connect 192.168.1.x:5555\nadb install -r app-debug.apk')">COPY</button>
+        </div>
+        <pre><span class="comment"># Pair using the IP:port and code shown on device</span>
+<span class="cmd">adb</span> pair <span class="path">192.168.1.x</span><span class="flag">:PORT</span>
+
+<span class="comment"># Then connect using the main port (shown under Wireless Debugging)</span>
+<span class="cmd">adb</span> connect <span class="path">192.168.1.x</span><span class="flag">:5555</span>
+
+<span class="comment"># Install</span>
+<span class="cmd">adb</span> install <span class="flag">-r</span> <span class="path">app-debug.apk</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Method 3: Remote -->
+  <div class="method remote" id="method3">
+    <div class="method-header" onclick="toggleMethod('method3')">
+      <div class="method-num">3</div>
+      <div class="method-title-wrap">
+        <div class="method-title">Remote Testers</div>
+        <div class="method-sub">Send instructions to testers doing it themselves</div>
+      </div>
+      <span class="method-badge badge-remote">REMOTE</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="method-body">
+      <div class="tip">
+        <span class="tip-icon">⚠</span>
+        <span>This requires testers to be comfortable using a terminal. For non-technical testers, consider <strong>Firebase App Distribution</strong> instead.</span>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <span class="step-num">1</span>
+          <span class="step-text">Send tester the APK file and the ADB platform tools download link</span>
+        </div>
+        <div class="step">
+          <span class="step-num">2</span>
+          <span class="step-text">They enable <strong>Developer Options</strong> (tap Build Number 7 times) and turn on <strong>USB Debugging</strong></span>
+        </div>
+        <div class="step">
+          <span class="step-num">3</span>
+          <span class="step-text">Connect phone to their own PC via USB and run:</span>
+        </div>
+      </div>
+      <div class="code-block">
+        <div class="code-top">
+          <span class="code-label">terminal</span>
+          <button class="copy-btn" onclick="copyCode(this, 'adb install -r cglive.apk')">COPY</button>
+        </div>
+        <pre><span class="cmd">adb</span> install <span class="flag">-r</span> <span class="path">cglive.apk</span></pre>
+      </div>
+      <div class="tip">
+        <span class="tip-icon">ℹ</span>
+        <span>This completely bypasses Play Protect and unknown sources warnings. No permissions dialogs, no blocks.</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function toggleMethod(id) {
+    const el = document.getElementById(id);
+    el.classList.toggle('open');
+  }
+
+  // Open first method by default
+  document.getElementById('method1').classList.add('open');
+
+  function copyCode(btn, text) {
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = 'COPIED ✓';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = 'COPY';
+        btn.classList.remove('copied');
+      }, 2000);
+    });
+  }
+</script>
+</body>
+</html>
